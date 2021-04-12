@@ -61,7 +61,7 @@ while ($row = $rset->fetch_assoc()) {
         break;
   }
 }
-$message .= "ごみ】の日です";
+$message .= "ごみ】の日だよ！";
 
 // メッセージ送信
 broadcast($message);
