@@ -1,6 +1,7 @@
 
 .DS_Store
 runCron.sh
+lib/*
 data/.DS_Store
 data/config.php
 .DS_Store
