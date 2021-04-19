@@ -6,3 +6,4 @@ lib/connectDB.php
 data/.DS_Store
 data/config.php
 .DS_Store
+quickstart.php
