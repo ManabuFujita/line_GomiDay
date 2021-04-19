@@ -7,7 +7,9 @@ $channel_secret = 'd582103b27c7ad1074d534b1dc925f3f';
 
 //LINESDKの読み込み
 require_once('vendor/autoload.php');
+
 require_once('lib/FuncFile.php');
+require_once('data/config.php');
 
 use \LINE\LINEBot\HTTPClient\CurlHTTPClient;
 use \LINE\LINEBot;
