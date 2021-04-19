@@ -1,4 +1,5 @@
 
 .DS_Store
+runCron.sh
 data/.DS_Store
 data/config.php
