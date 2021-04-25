@@ -1,10 +1,6 @@
 #!/usr/local/php/7.4/lib/php
 <?php
 
-// Token
-$channel_access_token = 'un5fQF1s/oPd3HelK21sobV8u2p+sa008J/Mj8CTR8wECt153FRFhkew+5mCFBdSFfhAj4NIDIZbKqrXz6C8DhgAtDPdxUpCW2JcykN+Tm5JmkxJhO2gXm3kz9EToBqW59DYlhtFD4C6zcPWS6KcggdB04t89/1O/w1cDnyilFU=';
-$channel_secret = 'd582103b27c7ad1074d534b1dc925f3f';
-
 //LINESDKの読み込み
 require_once('vendor/autoload.php');
 
@@ -20,7 +16,9 @@ use \LINE\LINEBot\Constant\HTTPHeader;
 //LINEから送られてきたらtrueになる（Webhook用）
 if(isset($_SERVER["HTTP_".HTTPHeader::LINE_SIGNATURE]))
 {
-  reply();
+  // reply("test");
+  $message = getScheduleMessage();
+  reply($message);
   return;
 }
 
@@ -33,7 +31,7 @@ $tomorrowYMD = date($dateFormat, strtotime('+1 day'));
 $dayAfterTomorrowYMD = date($dateFormat, strtotime('+1 day'));
 
 // DB接続
-$mysqli = getConnection() ;
+$mysqli = getConnection();
 
 // $sql = "SELECT * FROM TgomiDay WHERE Date between '" . $tomorrowYMD . "' and '" . $dayAfterTomorrowYMD . "' order by date asc";
 $sql = "SELECT * FROM TgomiDay WHERE Date = '" . $tomorrowYMD . "' order by date asc";
@@ -46,11 +44,13 @@ if ($rset->num_rows === 0) return;
 
 // データありの場合、メッセージ送信
 $message = "明日は【";
-while ($row = $rset->fetch_assoc()) {
-  switch ($row["Date"]) {
+while ($row = $rset->fetch_assoc())
+{
+  switch ($row["Date"])
+  {
     case $tomorrowYMD:
-        $message .= $row["Kbn"];
-        break;
+      $message .= $row["Kbn"];
+      break;
   }
 }
 $message .= "ごみ】の日だよ！";
@@ -63,53 +63,87 @@ broadcast($message);
 //---------------------------------------------------
 // DBに接続する
 //---------------------------------------------------
-function getConnection() {
-    $server   = "mysql133.phy.lolipop.lan";
-    $user     = "LAA0667847";
-    $pass     = "vBuZPCtC";
-    $database = "LAA0667847-wkw3p1";
+function getConnection()
+{
+  global $server;
+  global $user;
+  global $pass;
+  global $database;
 
-    //-------------------
-    //DBに接続
-    //-------------------
-    $mysqli = new mysqli($server, $user, $pass, $database);
+  //-------------------
+  //DBに接続
+  //-------------------
+  $mysqli = new mysqli($server, $user, $pass, $database);
 
-    // 接続状況をチェックします
-    // if (mysqli_connect_errno()) {
-    //     die("データベースに接続できません:" . mysqli_connect_error() . "\n");
-    // } else {
-    //     echo "データベースの接続に成功しました。\n";
-    // }
+  // 接続状況をチェックします
+  // if (mysqli_connect_errno()) {
+  //     die("データベースに接続できません:" . mysqli_connect_error() . "\n");
+  // } else {
+  //     echo "データベースの接続に成功しました。\n";
+  // }
 
-    $mysqli->set_charset('utf8');
+  $mysqli->set_charset('utf8');
 
-    //-------------------
-    // データベース選択
-    //-------------------
-    $mysqli->select_db($database);
+  //-------------------
+  // データベース選択
+  //-------------------
+  $mysqli->select_db($database);
 
-    return $mysqli;
+  return $mysqli;
 }
 
 //---------------------------------------------------
 // SQLを実行する
 //---------------------------------------------------
-function execute($mysqli, $sql) {
-    $result = $mysqli->query($sql);
+function execute($mysqli, $sql)
+{
+  $result = $mysqli->query($sql);
 
-    return $result;
+  return $result;
 }
 
+//---------------------------------------------------
+// 直近のごみの日を返す
+//---------------------------------------------------
+function getScheduleMessage()
+{
+  // DB接続
+  $mysqli = getConnection();
 
-function reply()
+  // 明日以降の区分ごとの直近のごみの日を取得
+  $dateFormat = 'Y-m-d';
+  $tomorrowYMD = date($dateFormat, strtotime('+1 day'));
+  $sql = "SELECT MIN(Date) AS Date_min, Kbn FROM TgomiDay where Date >= '" . $tomorrowYMD . "' GROUP BY Kbn ORDER BY Date_min ";
+
+  // SQL実行
+  $rset = execute($mysqli, $sql);
+
+  // データがなければ終了
+  if ($rset->num_rows === 0) return;
+
+  // データありの場合、メッセージ送信
+  $week = array( "日", "月", "火", "水", "木", "金", "土" );
+
+  $message = "明日以降のごみの日は\n";
+  while ($row = $rset->fetch_assoc())
+  {
+    // $dateFormat = "m/d";
+    $dateFormat = "n/j";
+    $timestamp = strtotime($row["Date_min"]);
+    $message .= date($dateFormat, $timestamp) . "(" . $week[date("w", $timestamp)] . ") : " . $row["Kbn"] . "\n";
+  }
+  $message .= "だよ！";
+
+  return $message;
+}
+
+function reply($message)
 {
   global $channel_access_token;
   global $channel_secret;
 
   //LINEBOTにPOSTで送られてきた生データの取得
   $inputData = file_get_contents("php://input");
-
-  $fileSend->writeFileAdd($inputData);
 
   //LINEBOTSDKの設定
   $httpClient = new CurlHTTPClient($channel_access_token);
@@ -122,7 +156,7 @@ function reply()
   {
     $sendMessage = new MultiMessageBuilder();
     // $textMessageBuilder = new TextMessageBuilder("test！");
-    $message = $event->getText();
+    // $message = $event->getText();
     $textMessageBuilder = new TextMessageBuilder($message);
     $sendMessage->add($textMessageBuilder);
     $bot->replyMessage($event->getReplyToken(), $sendMessage);
