@@ -130,7 +130,8 @@ function getScheduleMessage()
     // $dateFormat = "m/d";
     $dateFormat = "n/j";
     $timestamp = strtotime($row["Date_min"]);
-    $message .= $row["Kbn"] . " : " . date($dateFormat, $timestamp) . "(" . $week[date("w", $timestamp)] . ")\n";
+    // $message .= $row["Kbn"] . " : " . date($dateFormat, $timestamp) . "(" . $week[date("w", $timestamp)] . ")\n";
+    $message .= date($dateFormat, $timestamp) . "(" . $week[date("w", $timestamp)] . "): " . $row["Kbn"]  . "\n";
   }
   $message .= "だよ！";
 
