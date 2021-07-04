@@ -29,36 +29,87 @@ $yesterdayYMD = date($dateFormat, strtotime('-1 day'));
 $todayYMD = date($dateFormat);
 $tomorrowYMD = date($dateFormat, strtotime('+1 day'));
 $dayAfterTomorrowYMD = date($dateFormat, strtotime('+1 day'));
+$week1 = date($dateFormat, strtotime('+1 week'));
 
 // DB接続
 $mysqli = getConnection();
 
-// $sql = "SELECT * FROM TgomiDay WHERE Date between '" . $tomorrowYMD . "' and '" . $dayAfterTomorrowYMD . "' order by date asc";
-$sql = "SELECT * FROM TgomiDay WHERE Date = '" . $tomorrowYMD . "' order by date asc";
+// 1週間後の予定を送信
+send1Week($mysqli, $week1);
 
-// SQL実行
-$rset = execute($mysqli, $sql);
+// 明日の予定を送信
+sendTomorrow($mysqli, $tomorrowYMD);
 
-// データがなければ終了
-if ($rset->num_rows === 0) return;
-
-// データありの場合、メッセージ送信
-$message = "明日は【";
-while ($row = $rset->fetch_assoc())
+//---------------------------------------------------
+// 1週間後の予定を送信
+//---------------------------------------------------
+function send1Week($mysqli, $date)
 {
-  switch ($row["Date"])
+  $sql = "SELECT * FROM TgomiDay WHERE Date = '" . $date . "' order by date asc";
+
+  // SQL実行
+  $rset = execute($mysqli, $sql);
+
+  // データがなければ終了
+  if ($rset->num_rows === 0) return;
+
+  // データありの場合、メッセージ送信
+  $message = "【予定】来週は【";
+  while ($row = $rset->fetch_assoc())
   {
-    case $tomorrowYMD:
-      $message .= $row["Kbn"];
-      break;
+    switch ($row["Date"])
+    {
+      case $date:
+        $kbn = $row["Kbn"];
+
+        if (strpos($kbn, "紙") !== false or
+            strpos($kbn, "不燃") !== false or
+            strpos($kbn, "缶") !== false or
+            strpos($kbn, "ペ") !== false or
+            strpos($kbn, "ビン") !== false)
+        {
+          $message .= $kbn;
+          break;
+        }
+    }
   }
+  $message .= "ごみ】の日だよ！";
+
+  // メッセージ送信
+  broadcast($message);
 }
-$message .= "ごみ】の日だよ！";
-
-// メッセージ送信
-broadcast($message);
 
 
+//---------------------------------------------------
+// 明日の予定を送信
+//---------------------------------------------------
+function sendTomorrow($mysqli, $date)
+{
+  // $sql = "SELECT * FROM TgomiDay WHERE Date between '" . $tomorrowYMD . "' and '" . $dayAfterTomorrowYMD . "' order by date asc";
+  $sql = "SELECT * FROM TgomiDay WHERE Date = '" . $date . "' order by date asc";
+
+  // SQL実行
+  $rset = execute($mysqli, $sql);
+
+  // データがなければ終了
+  if ($rset->num_rows === 0) return;
+
+  // データありの場合、メッセージ送信
+  $message = "明日は【";
+  while ($row = $rset->fetch_assoc())
+  {
+    switch ($row["Date"])
+    {
+      case $date:
+        $message .= $row["Kbn"];
+        break;
+    }
+  }
+  $message .= "ごみ】の日だよ！";
+
+  // メッセージ送信
+  broadcast($message);
+}
 
 //---------------------------------------------------
 // DBに接続する
@@ -98,6 +149,10 @@ function getConnection()
 function execute($mysqli, $sql)
 {
   $result = $mysqli->query($sql);
+
+  // echo "<PRE>";
+  // print_r($result);
+  // echo "</PRE>";
 
   return $result;
 }
