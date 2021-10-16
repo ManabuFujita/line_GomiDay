@@ -54,7 +54,7 @@ function send1Week($mysqli, $date)
   if ($rset->num_rows === 0) return;
 
   // データありの場合、メッセージ送信
-  $message = "【予定】来週は【";
+  $message = "";
   while ($row = $rset->fetch_assoc())
   {
     switch ($row["Date"])
@@ -73,10 +73,14 @@ function send1Week($mysqli, $date)
         }
     }
   }
-  $message .= "ごみ】の日だよ！";
-
-  // メッセージ送信
-  broadcast($message);
+  if ($message === "")
+  {
+    return;
+  } else {
+    $message = "【予定】来週は【" + $message + "ごみ】の日だよ！";
+    // メッセージ送信
+    broadcast($message);
+  }
 }
 
 
