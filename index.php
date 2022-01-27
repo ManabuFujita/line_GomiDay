@@ -77,7 +77,7 @@ function send1Week($mysqli, $date)
   {
     return;
   } else {
-    $message = "【予定】来週は【" + $message + "ごみ】の日だよ！";
+    $message = "【予定】来週は【" . $message . "ごみ】の日だよ！";
     // メッセージ送信
     broadcast($message);
   }
